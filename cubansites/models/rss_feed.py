@@ -13,3 +13,7 @@ class RssFeedUrl(models.Model):
     category = models.ForeignKey(verbose_name=_('Category'), to='cubansites.Category',
                                  on_delete=models.SET_NULL, null=True, blank=True)
     feed_type = models.CharField(verbose_name=_('Type'), choices=FEED_TYPES, default='rss', max_length=32)
+
+    
+    def __str__(self) -> str:
+        return f"{self.get_feed_type_display()} / {self.website.name}"
