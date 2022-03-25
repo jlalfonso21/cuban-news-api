@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_DB=cubanews_db
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+    ports:
+      - 5432:5432
+
+  web:
+    build: ./
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./:/usr/src/app/
+    ports:
+      - 8000:8000
+    environment:
+      - DEBUG=1
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build: ./
+    command: celery worker --app=backend --loglevel=info --logfile=logs/celery.log
+    volumes:
+      - ./:/usr/src/app
+    environment:
+      - DEBUG=1
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    depends_on:
+      - web
+      - db
+      - redis
+
+  redis:
+    image: redis:6-alpine
